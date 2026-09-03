@@ -1,0 +1,346 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN
+  ORGANIZATION_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  FULFILLED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Platform / tenancy
+// ---------------------------------------------------------------------------
+
+/// A fashion business/organization using the platform. The tenant boundary:
+/// every organization-owned row below carries an organizationId and all
+/// queries must be scoped to it.
+model Organization {
+  id           String             @id @default(cuid())
+  name         String
+  slug         String             @unique
+  description  String?
+  logoUrl      String?
+  contactEmail String?
+  contactPhone String?
+  address      String?
+  status       OrganizationStatus @default(ACTIVE)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  admin      User?
+  categories Category[]
+  products   Product[]
+  customers  Customer[]
+  orders     Order[]
+  storefront StorefrontConfig?
+  settings   OrganizationSettings?
+
+  @@map("organizations")
+}
+
+/// Only two roles exist. SUPER_ADMIN rows always have organizationId = null.
+/// ORGANIZATION_ADMIN rows always have organizationId set. The unique
+/// constraint on organizationId enforces at most one admin per organization
+/// (Postgres unique indexes allow multiple NULLs, so this never restricts
+/// how many SUPER_ADMIN rows can exist).
+model User {
+  id             String       @id @default(cuid())
+  organizationId String?      @unique
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  email          String       @unique
+  passwordHash   String
+  role           UserRole
+  status         UserStatus   @default(ACTIVE)
+  lastLoginAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  resetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+model Category {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String
+  parentId       String?
+  parent         Category?    @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Category[]   @relation("CategoryTree")
+  archivedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  products ProductCategory[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@map("categories")
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  slug           String
+  description    String        @default("")
+  vendor         String        @default("")
+  productType    String        @default("")
+  status         ProductStatus @default(DRAFT)
+
+  price          Float
+  compareAtPrice Float?
+  costPerItem    Float?
+  sku            String?
+  barcode        String?
+
+  trackQuantity     Boolean @default(true)
+  quantity          Int     @default(0)
+  lowStockThreshold Int     @default(5)
+  allowBackorder    Boolean @default(false)
+
+  variantOptionNames String[]
+  isFeatured         Boolean  @default(false)
+
+  seoTitle         String   @default("")
+  seoDescription   String   @default("")
+  weightKg         Float?
+  requiresShipping Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images     ProductImage[]
+  variants   ProductVariant[]
+  categories ProductCategory[]
+  orderItems OrderItem[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, status])
+  @@map("products")
+}
+
+model ProductCategory {
+  productId  String
+  categoryId String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@map("product_categories")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String  @default("")
+  position  Int     @default(0)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+/// options is a JSON array of {name, value} pairs, e.g. [{"name":"Size","value":"M"}].
+model ProductVariant {
+  id                String  @id @default(cuid())
+  productId         String
+  product           Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title             String
+  options           Json
+  sku               String?
+  price             Float?
+  compareAtPrice    Float?
+  inventoryQuantity Int     @default(0)
+  imageId           String?
+
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+// ---------------------------------------------------------------------------
+// Customers & commerce
+// ---------------------------------------------------------------------------
+
+/// Customers are created by storefront checkout activity, not admin login.
+/// They never receive a User row / session.
+model Customer {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  email          String
+  phone          String?
+  address        Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  orders Order[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@map("customers")
+}
+
+model Order {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orderNumber    String
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  status         OrderStatus   @default(PENDING)
+  paymentStatus  PaymentStatus @default(PENDING)
+
+  shippingName    String
+  shippingEmail   String
+  shippingPhone   String?
+  shippingAddress Json
+
+  subtotal Float
+  discount Float @default(0)
+  shipping Float @default(0)
+  tax      Float @default(0)
+  total    Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId, status])
+  @@index([organizationId, createdAt])
+  @@map("orders")
+}
+
+/// Snapshots product/variant data at order time so later edits to a product
+/// (name, price) never change historical orders.
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  productName  String
+  variantTitle String?
+  sku          String?
+  quantity     Int
+  unitPrice    Float
+  total        Float
+
+  @@map("order_items")
+}
+
+// ---------------------------------------------------------------------------
+// Storefront & settings
+// ---------------------------------------------------------------------------
+
+model StorefrontConfig {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  storeName           String   @default("")
+  logoUrl             String?
+  faviconUrl          String?
+  primaryColor        String   @default("#111111")
+  secondaryColor      String   @default("#f5f5f5")
+  fontFamily          String   @default("Inter")
+  heroHeadline         String?
+  heroSubheadline      String?
+  heroImageUrl         String?
+  featuredProductIds   String[]
+  featuredCategoryIds  String[]
+  footerText           String?
+  contactEmail         String?
+  contactPhone         String?
+  socialLinks          Json?
+
+  updatedAt DateTime @updatedAt
+
+  @@map("storefront_configs")
+}
+
+model OrganizationSettings {
+  id             String       @id @default(cuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  currency                 String  @default("USD")
+  timezone                 String  @default("UTC")
+  taxRatePercent           Float   @default(0)
+  shippingFlatRate         Float   @default(0)
+  freeShippingThreshold    Float?
+  orderNumberPrefix        String  @default("ORD")
+  lowStockThresholdDefault Int     @default(5)
+
+  updatedAt DateTime @updatedAt
+
+  @@map("organization_settings")
+}
