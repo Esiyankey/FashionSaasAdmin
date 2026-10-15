@@ -5,8 +5,14 @@ const text = (max: number) => z.string().trim().max(max);
 const optionalText = (max: number) => text(max).nullable().optional();
 
 /** Partial update of store info, contact details, branding, announcement bar and hero. */
-export const storefrontConfigUpdateSchema = z
-  .object({
+export const storefrontConfigUpdateSchema = z.preprocess(
+  (value) => {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) return value;
+    // Ignore socialLinks from existing portal bundles; social-link setup is temporarily disabled.
+    const { socialLinks: _ignoredSocialLinks, ...rest } = value as Record<string, unknown>;
+    return rest;
+  },
+  z.object({
     storeName: text(80).min(1).optional(),
     logoUrl: optionalImageUrl,
     faviconUrl: optionalImageUrl,
@@ -31,10 +37,6 @@ export const storefrontConfigUpdateSchema = z
       .transform((value) => value || null)
       .nullable()
       .optional(),
-    socialLinks: z
-      .record(z.enum(["instagram", "facebook", "x", "twitter", "tiktok", "youtube", "pinterest", "linkedin"]), z.string().trim().url().max(300))
-      .nullable()
-      .optional(),
     heroBadgeText: optionalText(80),
     heroHeadline: optionalText(160),
     heroSubheadline: optionalText(300),
@@ -48,8 +50,8 @@ export const storefrontConfigUpdateSchema = z
     announcementLinkLabel: optionalText(40),
     announcementLinkHref: hrefSchema.nullable().optional().or(z.literal("").transform(() => null)),
     announcementShowPhone: z.boolean().optional(),
-  })
-  .strict();
+  }).strict()
+);
 
 export type StorefrontConfigUpdate = z.infer<typeof storefrontConfigUpdateSchema>;
 

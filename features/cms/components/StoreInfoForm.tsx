@@ -11,8 +11,6 @@ import { ImageField } from "@/features/media/components/ImageField";
 import { useUpdateStorefrontConfig } from "@/features/settings/hooks/useSettings";
 import type { StorefrontConfig } from "@/features/settings/types";
 
-const SOCIAL_PLATFORMS = ["instagram", "facebook", "x", "tiktok", "youtube", "pinterest", "linkedin"] as const;
-
 /** Store identity, SEO defaults and the single source of contact details shown across the storefront. */
 export function StoreInfoForm({ initial }: { initial: StorefrontConfig }) {
   const update = useUpdateStorefrontConfig();
@@ -30,12 +28,10 @@ export function StoreInfoForm({ initial }: { initial: StorefrontConfig }) {
     addressLines: initial.addressLines.join("\n"),
     workingHours: initial.workingHours ?? "",
     mapEmbedUrl: initial.mapEmbedUrl ?? "",
-    socialLinks: { ...(initial.socialLinks ?? {}) } as Record<string, string>,
   });
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((current) => ({ ...current, [key]: value }));
 
   function save() {
-    const socialLinks = Object.fromEntries(Object.entries(form.socialLinks).filter(([, url]) => url.trim()));
     update.mutate({
       storeName: form.storeName,
       logoUrl: form.logoUrl,
@@ -50,7 +46,6 @@ export function StoreInfoForm({ initial }: { initial: StorefrontConfig }) {
       addressLines: form.addressLines.split("\n").map((line) => line.trim()).filter(Boolean),
       workingHours: form.workingHours || null,
       mapEmbedUrl: form.mapEmbedUrl || null,
-      socialLinks: Object.keys(socialLinks).length ? socialLinks : null,
     });
   }
 
@@ -107,21 +102,6 @@ export function StoreInfoForm({ initial }: { initial: StorefrontConfig }) {
               <Input id="mapEmbedUrl" value={form.mapEmbedUrl} onChange={(e) => set("mapEmbedUrl", e.target.value)} />
             </Field>
           </div>
-        </div>
-      </FormSection>
-
-      <FormSection title="Social links" description="Leave blank to hide a network.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {SOCIAL_PLATFORMS.map((platform) => (
-            <Field key={platform} label={platform === "x" ? "X (Twitter)" : platform[0].toUpperCase() + platform.slice(1)} id={`social-${platform}`}>
-              <Input
-                id={`social-${platform}`}
-                placeholder="https://"
-                value={form.socialLinks[platform] ?? ""}
-                onChange={(e) => set("socialLinks", { ...form.socialLinks, [platform]: e.target.value })}
-              />
-            </Field>
-          ))}
         </div>
       </FormSection>
 
