@@ -21,11 +21,7 @@ export async function getStorefrontConfigForOrg(organizationId: string) {
 }
 
 export async function updateStorefrontConfigForOrg(organizationId: string, input: StorefrontConfigUpdate) {
-  const { socialLinks, ...rest } = input;
-  const data = {
-    ...rest,
-    ...(socialLinks !== undefined ? { socialLinks: socialLinks === null ? Prisma.JsonNull : socialLinks } : {}),
-  };
+  const data = input;
   const config = await prisma.storefrontConfig.upsert({
     where: { organizationId },
     update: data,
