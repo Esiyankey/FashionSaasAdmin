@@ -6,7 +6,7 @@ export interface DashboardStat {
   changePercent: number;
 }
 
-export type RecentOrderStatus = "PENDING" | "PROCESSING" | "FULFILLED" | "CANCELLED";
+export type RecentOrderStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
 export interface RecentOrderSummary {
   id: string;

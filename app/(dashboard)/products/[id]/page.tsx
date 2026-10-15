@@ -14,6 +14,8 @@ function toFormValues(product: Product): ProductFormValues {
   return {
     title: product.title,
     description: product.description,
+    summary: product.summary ?? "",
+    features: product.features ?? [],
     vendor: product.vendor,
     productType: product.productType,
     status: product.status,
@@ -30,6 +32,7 @@ function toFormValues(product: Product): ProductFormValues {
     seo: product.seo,
     shipping: product.shipping,
     isFeatured: product.isFeatured,
+    featuredPosition: product.featuredPosition,
   };
 }
 
@@ -56,6 +59,7 @@ export default function EditProductPage() {
           defaultValues={toFormValues(product)}
           onSubmit={handleSubmit}
           isSubmitting={updateProduct.isPending}
+          serverError={updateProduct.error}
           submitLabel="Save changes"
         />
       )}

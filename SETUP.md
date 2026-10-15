@@ -106,3 +106,18 @@ npm run db:deploy    # apply pending migrations without prompting (CI/production
 - `AUTH_SECRET` and `DATABASE_URL` are the only two things required to run the app.
   Everything else (organizations, products, orders, etc.) is created through the
   app itself or the seed script.
+
+## Storefront integration
+
+The public storefront reads this app's data through `/storefront/{orgSlug}`. See
+[docs/INTEGRATION.md](docs/INTEGRATION.md) for the API reference, caching/revalidation and
+the changes the storefront repository needs.
+
+For the step-by-step organization, owner, storefront link, and product workflow, see
+[docs/ORGANIZATION_ONBOARDING.md](docs/ORGANIZATION_ONBOARDING.md).
+
+```bash
+npm run db:deploy             # apply migrations (safe on existing data)
+npm run db:import-storefront  # one-time: create the "fashion-saas" org from the storefront's former mock data
+npm run test:e2e              # end-to-end tests against a running server (see the file header for env vars)
+```

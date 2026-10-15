@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Loader2, Send, Trash2, X } from "lucide-react";
+import { Archive, EyeOff, Loader2, Send, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BulkActionsBarProps {
@@ -8,11 +8,12 @@ interface BulkActionsBarProps {
   onClear: () => void;
   onArchive: () => void;
   onPublish: () => void;
+  onUnpublish: () => void;
   onDelete: () => void;
   isPending?: boolean;
 }
 
-export function BulkActionsBar({ count, onClear, onArchive, onPublish, onDelete, isPending }: BulkActionsBarProps) {
+export function BulkActionsBar({ count, onClear, onArchive, onPublish, onUnpublish, onDelete, isPending }: BulkActionsBarProps) {
   if (count === 0) return null;
 
   return (
@@ -25,6 +26,10 @@ export function BulkActionsBar({ count, onClear, onArchive, onPublish, onDelete,
         <Button variant="outline" size="sm" onClick={onPublish} disabled={isPending}>
           {isPending ? <Loader2 className="animate-spin" /> : <Send />}
           Publish
+        </Button>
+        <Button variant="outline" size="sm" onClick={onUnpublish} disabled={isPending}>
+          {isPending ? <Loader2 className="animate-spin" /> : <EyeOff />}
+          Unpublish
         </Button>
         <Button variant="outline" size="sm" onClick={onArchive} disabled={isPending}>
           {isPending ? <Loader2 className="animate-spin" /> : <Archive />}

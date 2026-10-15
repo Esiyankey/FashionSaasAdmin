@@ -6,6 +6,7 @@ import { FormControl, FormField, FormItem, FormLabel } from "@/components/ui/for
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { CategoryMultiSelect } from "../../CategoryMultiSelect";
 import type { ProductFormValues } from "../schema";
@@ -14,6 +15,7 @@ export function VisibilitySection() {
   const { control, watch, setValue } = useFormContext<ProductFormValues>();
   const { data: categories = [] } = useCategories();
   const categoryIds = watch("categoryIds");
+  const isFeatured = watch("isFeatured");
 
   return (
     <>
@@ -51,6 +53,29 @@ export function VisibilitySection() {
             </FormItem>
           )}
         />
+        {isFeatured && (
+          <FormField
+            control={control}
+            name="featuredPosition"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Featured order</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="Lower numbers show first"
+                    value={field.value ?? ""}
+                    onChange={(event) => field.onChange(event.target.value === "" ? undefined : event.target.valueAsNumber)}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        )}
+        <p className="text-xs text-muted-foreground">
+          Only published products appear on the storefront. Publishing requires a price and at least one image.
+        </p>
       </FormSection>
 
       <FormSection title="Organization" description="Group this product for browsing and filtering.">

@@ -7,6 +7,7 @@ import { FormSection } from "@/components/shared/FormSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { VariantOption } from "../../../types";
 import type { ProductFormValues } from "../schema";
@@ -144,6 +145,7 @@ export function VariantsSection() {
                 <TableHead>SKU</TableHead>
                 <TableHead>Price override</TableHead>
                 <TableHead>Stock</TableHead>
+                <TableHead>Active</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -180,7 +182,16 @@ export function VariantsSection() {
                       min={0}
                       className="h-8 w-24"
                       value={watch(`variants.${index}.inventoryQuantity`)}
-                      onChange={(event) => setValue(`variants.${index}.inventoryQuantity`, event.target.valueAsNumber || 0)}
+                      onChange={(event) =>
+                        setValue(`variants.${index}.inventoryQuantity`, Math.max(0, Math.floor(event.target.valueAsNumber || 0)))
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      aria-label="Variant available for sale"
+                      checked={watch(`variants.${index}.isActive`) ?? true}
+                      onCheckedChange={(checked) => setValue(`variants.${index}.isActive`, checked)}
                     />
                   </TableCell>
                   <TableCell>

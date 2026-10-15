@@ -18,7 +18,12 @@ export default function NewProductPage() {
 
   return (
     <PageContainer title="Add product" description="Create a new product in your catalog.">
-      <ProductForm onSubmit={handleSubmit} isSubmitting={createProduct.isPending} submitLabel="Create product" />
+      <ProductForm
+        onSubmit={handleSubmit}
+        isSubmitting={createProduct.isPending}
+        serverError={createProduct.error}
+        submitLabel="Create product"
+      />
     </PageContainer>
   );
 }

@@ -5,14 +5,14 @@ import { handleRoute } from "@/lib/api/handler";
 import { getSettingsForOrg, updateSettingsForOrg } from "@/lib/server/settings";
 
 const updateSchema = z.object({
-  currency: z.string().length(3).optional(),
-  timezone: z.string().optional(),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, "Use a 3-letter ISO currency code").optional(),
+  timezone: z.string().trim().min(1).max(60).optional(),
   taxRatePercent: z.number().min(0).max(100).optional(),
-  shippingFlatRate: z.number().min(0).optional(),
+  shippingFlatRate: z.number().min(0).max(100_000).optional(),
   freeShippingThreshold: z.number().min(0).nullable().optional(),
-  orderNumberPrefix: z.string().min(1).max(10).optional(),
-  lowStockThresholdDefault: z.number().int().min(0).optional(),
-});
+  orderNumberPrefix: z.string().trim().regex(/^[A-Za-z0-9]{1,10}$/, "Letters and numbers only").optional(),
+  lowStockThresholdDefault: z.number().int().min(0).max(100_000).optional(),
+}).strict();
 
 export const GET = handleRoute(async () => {
   const { organizationId } = await requireOrgAdmin();

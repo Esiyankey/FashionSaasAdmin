@@ -7,20 +7,15 @@ import { FormSection } from "@/components/shared/FormSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  useSettings,
-  useStorefrontConfig,
-  useUpdateSettings,
-  useUpdateStorefrontConfig,
-} from "@/features/settings/hooks/useSettings";
-import type { OrganizationSettings, StorefrontConfig } from "@/features/settings/types";
+import Link from "next/link";
+import { SaveStatus } from "@/components/shared/SaveStatus";
+import { useSettings, useUpdateSettings } from "@/features/settings/hooks/useSettings";
+import type { OrganizationSettings } from "@/features/settings/types";
 
 export default function SettingsPage() {
   const { data: settings, isLoading: settingsLoading } = useSettings();
-  const { data: storefront, isLoading: storefrontLoading } = useStorefrontConfig();
 
-  if (settingsLoading || storefrontLoading || !settings || !storefront) {
+  if (settingsLoading || !settings) {
     return (
       <PageContainer title="Settings">
         <LoadingState rows={6} />
@@ -29,10 +24,16 @@ export default function SettingsPage() {
   }
 
   return (
-    <PageContainer title="Settings" description="Business preferences and storefront configuration.">
+    <PageContainer title="Settings" description="Currency, tax and shipping used to price storefront orders.">
       <div className="flex max-w-2xl flex-col gap-6 pb-10">
         <BusinessSettingsForm initial={settings} />
-        <StorefrontBrandingForm initial={storefront} />
+        <p className="text-sm text-muted-foreground">
+          Store name, branding, contact details, hero and navigation are edited under{" "}
+          <Link href="/content" className="underline">
+            Storefront content
+          </Link>
+          .
+        </p>
       </div>
     </PageContainer>
   );
@@ -110,6 +111,11 @@ function BusinessSettingsForm({ initial }: { initial: OrganizationSettings }) {
           />
         </div>
       </div>
+      <SaveStatus
+        isSuccess={updateSettings.isSuccess}
+        error={updateSettings.error}
+        message="Saved. New orders use these values; existing orders keep theirs."
+      />
       <Button
         className="mt-4"
         disabled={updateSettings.isPending}
@@ -125,83 +131,6 @@ function BusinessSettingsForm({ initial }: { initial: OrganizationSettings }) {
         }
       >
         Save business settings
-      </Button>
-    </FormSection>
-  );
-}
-
-function StorefrontBrandingForm({ initial }: { initial: StorefrontConfig }) {
-  const updateStorefront = useUpdateStorefrontConfig();
-  const [form, setForm] = useState({
-    storeName: initial.storeName,
-    primaryColor: initial.primaryColor,
-    secondaryColor: initial.secondaryColor,
-    heroHeadline: initial.heroHeadline ?? "",
-    heroSubheadline: initial.heroSubheadline ?? "",
-    footerText: initial.footerText ?? "",
-  });
-
-  return (
-    <FormSection title="Storefront branding" description="How your public storefront looks.">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="storeName">Store name</Label>
-          <Input id="storeName" value={form.storeName} onChange={(e) => setForm((f) => ({ ...f, storeName: e.target.value }))} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="primaryColor">Primary color</Label>
-          <Input
-            id="primaryColor"
-            type="color"
-            value={form.primaryColor}
-            onChange={(e) => setForm((f) => ({ ...f, primaryColor: e.target.value }))}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="secondaryColor">Secondary color</Label>
-          <Input
-            id="secondaryColor"
-            type="color"
-            value={form.secondaryColor}
-            onChange={(e) => setForm((f) => ({ ...f, secondaryColor: e.target.value }))}
-          />
-        </div>
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="heroHeadline">Hero headline</Label>
-          <Input
-            id="heroHeadline"
-            value={form.heroHeadline}
-            onChange={(e) => setForm((f) => ({ ...f, heroHeadline: e.target.value }))}
-          />
-        </div>
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="heroSubheadline">Hero subheadline</Label>
-          <Input
-            id="heroSubheadline"
-            value={form.heroSubheadline}
-            onChange={(e) => setForm((f) => ({ ...f, heroSubheadline: e.target.value }))}
-          />
-        </div>
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="footerText">Footer text</Label>
-          <Textarea id="footerText" value={form.footerText} onChange={(e) => setForm((f) => ({ ...f, footerText: e.target.value }))} />
-        </div>
-      </div>
-      <Button
-        className="mt-4"
-        disabled={updateStorefront.isPending}
-        onClick={() =>
-          updateStorefront.mutate({
-            storeName: form.storeName,
-            primaryColor: form.primaryColor,
-            secondaryColor: form.secondaryColor,
-            heroHeadline: form.heroHeadline || null,
-            heroSubheadline: form.heroSubheadline || null,
-            footerText: form.footerText || null,
-          })
-        }
-      >
-        Save storefront branding
       </Button>
     </FormSection>
   );

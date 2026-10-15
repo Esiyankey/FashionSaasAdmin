@@ -8,6 +8,7 @@ import { ErrorState } from "@/components/shared/ErrorState";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusChip } from "@/components/shared/StatusChip";
+import { ORDER_STATUS_LABEL, ORDER_STATUS_TONE } from "@/features/orders/status";
 import { useCustomer } from "@/features/customers/hooks/useCustomer";
 import { formatCurrency, formatDate } from "@/utils/format";
 
@@ -65,7 +66,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     <p className="text-xs text-muted-foreground">{formatDate(order.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <StatusChip label={order.status} tone={order.status === "FULFILLED" ? "success" : "muted"} />
+                    <StatusChip label={ORDER_STATUS_LABEL[order.status]} tone={ORDER_STATUS_TONE[order.status]} />
                     <span className="font-medium">{formatCurrency(order.total)}</span>
                   </div>
                 </button>

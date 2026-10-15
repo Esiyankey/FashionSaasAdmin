@@ -12,7 +12,9 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:import-storefront": "tsx prisma/import-storefront.ts",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/storefront-integration.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useFormContext, type FieldErrors } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ApiErrorAlert } from "@/components/shared/ApiErrorAlert";
 import { defaultProductFormValues, productFormSchema, type ProductFormValues } from "./schema";
 import { BasicInfoSection } from "./sections/BasicInfoSection";
 import { PricingSection } from "./sections/PricingSection";
@@ -19,6 +20,8 @@ interface ProductFormProps {
   defaultValues?: ProductFormValues;
   onSubmit: (values: ProductFormValues) => void | Promise<void>;
   isSubmitting?: boolean;
+  /** Error from the save request; validation messages from the server are listed. */
+  serverError?: unknown;
   submitLabel?: string;
 }
 
@@ -26,6 +29,7 @@ export function ProductForm({
   defaultValues = defaultProductFormValues,
   onSubmit,
   isSubmitting,
+  serverError,
   submitLabel = "Save product",
 }: ProductFormProps) {
   const router = useRouter();
@@ -37,6 +41,8 @@ export function ProductForm({
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6 pb-10">
+        <ApiErrorAlert error={serverError} />
+        <ClientErrorSummary />
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="flex flex-col gap-6 lg:col-span-2">
             <BasicInfoSection />
@@ -64,4 +70,36 @@ export function ProductForm({
       </form>
     </FormProvider>
   );
+}
+
+/** Lists validation errors for fields that have no inline message (images, variants, cross-field rules). */
+function ClientErrorSummary() {
+  const { formState } = useFormContext<ProductFormValues>();
+  if (formState.submitCount === 0 || formState.isValid) return null;
+  const messages = collectMessages(formState.errors);
+  if (messages.length === 0) return null;
+  return (
+    <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+      <p className="font-medium">Please fix the following before saving:</p>
+      <ul className="mt-1 list-disc pl-4">
+        {messages.map((message) => (
+          <li key={message}>{message}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function collectMessages(errors: FieldErrors, path: string[] = []): string[] {
+  const result: string[] = [];
+  for (const [key, value] of Object.entries(errors)) {
+    if (!value || typeof value !== "object") continue;
+    const entry = value as { message?: unknown; ref?: unknown };
+    if (typeof entry.message === "string" && entry.message) {
+      result.push(`${[...path, key].join(" › ")}: ${entry.message}`);
+    } else {
+      result.push(...collectMessages(value as FieldErrors, [...path, key]));
+    }
+  }
+  return [...new Set(result)];
 }

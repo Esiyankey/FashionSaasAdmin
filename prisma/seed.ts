@@ -61,15 +61,29 @@ const CUSTOMER_NAMES = [
   "Ama Boateng", "Kwame Asante", "Efua Mensah", "Kofi Owusu", "Adjoa Darko", "Yaw Appiah",
 ];
 
-function buildVariants(basePrice: number) {
+function buildVariants(organizationId: string, basePrice: number) {
   const colors = ["Black", "Sand", "Navy"];
   const sizes = ["S", "M", "L"];
-  const variants: { title: string; options: { name: string; value: string }[]; sku: string; inventoryQuantity: number }[] = [];
+  const variants: {
+    organizationId: string;
+    title: string;
+    options: { name: string; value: string }[];
+    optionKey: string;
+    size: string;
+    color: string;
+    sku: string;
+    inventoryQuantity: number;
+  }[] = [];
   for (const color of colors) {
     for (const size of sizes) {
       variants.push({
+        organizationId,
         title: `${color} / ${size}`,
         options: [{ name: "Color", value: color }, { name: "Size", value: size }],
+        // Same normalization as variantOptionKey() in lib/server/variants.ts.
+        optionKey: `color=${color.toLowerCase()}|size=${size.toLowerCase()}`,
+        size,
+        color,
         sku: `${slugify(color)}-${size}-${Math.round(basePrice)}`.toUpperCase(),
         inventoryQuantity: Math.max(0, Math.round((basePrice % 7) + Math.random() * 12)),
       });
@@ -157,6 +171,9 @@ async function seedOrganization(params: {
         vendor: params.name,
         productType: seed.productType,
         status: seed.status,
+        publishedAt: seed.status === "PUBLISHED" ? new Date() : null,
+        summary: `${seed.title}, made to last.`,
+        features: [],
         price: seed.price,
         compareAtPrice: seed.isFeatured ? Math.round(seed.price * 1.2) : null,
         costPerItem: Math.round(seed.price * 0.45),
@@ -177,7 +194,7 @@ async function seedOrganization(params: {
             position: i,
           })),
         },
-        variants: seed.withVariants ? { create: buildVariants(seed.price) } : undefined,
+        variants: seed.withVariants ? { create: buildVariants(organization.id, seed.price) } : undefined,
         categories: { create: categoryIds.map((categoryId) => ({ categoryId })) },
       },
     });
@@ -216,7 +233,7 @@ async function seedOrganization(params: {
           organizationId: organization.id,
           orderNumber: `ORD-${organization.slug.slice(0, 3).toUpperCase()}-${1000 + i * 10 + o}`,
           customerId: customer.id,
-          status: o === 0 ? "FULFILLED" : "PENDING",
+          status: o === 0 ? "DELIVERED" : "PENDING",
           paymentStatus: o === 0 ? "PAID" : "PENDING",
           shippingName: name,
           shippingEmail: email,
@@ -227,6 +244,7 @@ async function seedOrganization(params: {
           shipping,
           tax,
           total,
+          statusHistory: { create: { toStatus: o === 0 ? "DELIVERED" : "PENDING", note: "Seeded order" } },
           items: {
             create: [
               {

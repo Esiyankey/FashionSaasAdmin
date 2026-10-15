@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Copy, Eye, MoreHorizontal, Pencil, Send, Trash2 } from "lucide-react";
+import { Archive, Copy, Eye, EyeOff, MoreHorizontal, Pencil, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ interface ProductRowActionsProps {
   onDuplicate: (product: Product) => void;
   onArchive: (product: Product) => void;
   onPublish: (product: Product) => void;
+  onUnpublish: (product: Product) => void;
   onDelete: (product: Product) => void;
 }
 
@@ -28,6 +29,7 @@ export function ProductRowActions({
   onDuplicate,
   onArchive,
   onPublish,
+  onUnpublish,
   onDelete,
 }: ProductRowActionsProps) {
   return (
@@ -52,14 +54,20 @@ export function ProductRowActions({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         {product.status === "published" ? (
-          <DropdownMenuItem onSelect={() => onArchive(product)}>
-            <Archive />
-            Archive
+          <DropdownMenuItem onSelect={() => onUnpublish(product)}>
+            <EyeOff />
+            Unpublish
           </DropdownMenuItem>
         ) : (
           <DropdownMenuItem onSelect={() => onPublish(product)}>
             <Send />
             Publish
+          </DropdownMenuItem>
+        )}
+        {product.status !== "archived" && (
+          <DropdownMenuItem onSelect={() => onArchive(product)}>
+            <Archive />
+            Archive
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />

@@ -14,11 +14,12 @@ export default async function StorefrontLayout({
 }) {
   const { orgSlug } = await params;
 
-  const home = await getStorefrontHome(orgSlug).catch(() => null);
+  // Same-origin render, so uploaded media can stay relative ("/media/...").
+  const home = await getStorefrontHome(orgSlug, "").catch(() => null);
   if (!home) notFound();
 
-  const storeName = home.storefront?.storeName || home.organization.name;
-  const logoUrl = home.storefront?.logoUrl ?? home.organization.logoUrl;
+  const storeName = home.store.name;
+  const logoUrl = home.store.logoUrl;
 
   return (
     <CartProvider orgSlug={orgSlug}>
@@ -27,8 +28,8 @@ export default async function StorefrontLayout({
         <main className="flex-1">{children}</main>
         <StorefrontFooter
           storeName={storeName}
-          footerText={home.storefront?.footerText}
-          contactEmail={home.storefront?.contactEmail ?? home.organization.contactEmail}
+          footerText={home.store.footerText}
+          contactEmail={home.contact.email}
         />
       </div>
     </CartProvider>

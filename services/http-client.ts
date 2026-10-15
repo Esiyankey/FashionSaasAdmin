@@ -5,12 +5,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 export class ApiError extends Error implements ApiErrorShape {
   status: number;
   code?: string;
+  fieldErrors?: Record<string, string[]>;
 
-  constructor({ message, status, code }: ApiErrorShape) {
+  constructor({ message, status, code, fieldErrors }: ApiErrorShape) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -33,8 +35,9 @@ function buildUrl(path: string, params?: RequestOptions["params"]): string {
 async function request<T>(method: string, path: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(buildUrl(path, options.params), {
     method,
-    headers: { "Content-Type": "application/json", ...options.headers },
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    // FormData (file uploads) sets its own multipart Content-Type with boundary.
+    headers: options.body instanceof FormData ? { ...options.headers } : { "Content-Type": "application/json", ...options.headers },
+    body: options.body instanceof FormData ? options.body : options.body ? JSON.stringify(options.body) : undefined,
     credentials: "include",
   });
 
@@ -44,6 +47,7 @@ async function request<T>(method: string, path: string, options: RequestOptions 
       message: (body && typeof body.message === "string" && body.message) || response.statusText || "Request failed",
       status: response.status,
       code: body && typeof body.code === "string" ? body.code : undefined,
+      fieldErrors: body && typeof body.fieldErrors === "object" && body.fieldErrors ? body.fieldErrors : undefined,
     });
   }
 

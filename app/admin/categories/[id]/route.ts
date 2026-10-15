@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { z } from "zod";
 import { requireOrgAdmin } from "@/lib/auth/dal";
 import { handleRoute } from "@/lib/api/handler";
 import { archiveCategoryForOrg, updateCategoryForOrg } from "@/lib/server/categories";
+import { categoryFieldsSchema } from "@/lib/api/schemas/category";
 
-const updateSchema = z.object({ name: z.string().min(1), parentId: z.string().nullable().optional() });
+const updateSchema = categoryFieldsSchema.partial();
 
 export const PATCH = handleRoute(async (request: NextRequest, ctx: RouteContext<"/admin/categories/[id]">) => {
   const { organizationId } = await requireOrgAdmin();

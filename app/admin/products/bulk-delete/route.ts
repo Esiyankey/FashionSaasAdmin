@@ -2,13 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { requireOrgAdmin } from "@/lib/auth/dal";
 import { handleRoute } from "@/lib/api/handler";
-import { bulkDeleteProducts } from "@/lib/server/products";
+import { deleteProductsForOrg } from "@/lib/server/products";
 
-const bodySchema = z.object({ ids: z.array(z.string()).min(1) });
+const bodySchema = z.object({ ids: z.array(z.string()).min(1).max(200) });
 
 export const POST = handleRoute(async (request: NextRequest) => {
   const { organizationId } = await requireOrgAdmin();
   const { ids } = bodySchema.parse(await request.json());
-  await bulkDeleteProducts(organizationId, ids);
+  await deleteProductsForOrg(organizationId, ids);
   return new NextResponse(null, { status: 204 });
 });

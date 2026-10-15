@@ -27,12 +27,15 @@ export function statusFromDb(status: ProductStatus): "draft" | "published" | "ar
   return STATUS_FROM_DB[status];
 }
 
+/** Admin representation (includes cost, barcode and exact stock). Never returned by public endpoints. */
 export function serializeProduct(product: DbProduct) {
   return {
     id: product.id,
     title: product.title,
     slug: product.slug,
     description: product.description,
+    summary: product.summary,
+    features: product.features ?? [],
     vendor: product.vendor,
     productType: product.productType,
     status: statusFromDb(product.status),
@@ -61,11 +64,14 @@ export function serializeProduct(product: DbProduct) {
       price: variant.price ?? undefined,
       compareAtPrice: variant.compareAtPrice ?? undefined,
       inventoryQuantity: variant.inventoryQuantity,
+      isActive: variant.isActive,
       imageId: variant.imageId ?? undefined,
     })),
     seo: { title: product.seoTitle, description: product.seoDescription },
     shipping: { weightKg: product.weightKg ?? undefined, requiresShipping: product.requiresShipping },
     isFeatured: product.isFeatured,
+    featuredPosition: product.featuredPosition ?? undefined,
+    publishedAt: product.publishedAt?.toISOString() ?? null,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
   };

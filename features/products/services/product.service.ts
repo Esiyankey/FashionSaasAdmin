@@ -43,6 +43,11 @@ export function publishProducts(ids: string[]): Promise<void> {
   return apiClient.post<void>("/admin/products/bulk-publish", { body: { ids } });
 }
 
+/** Moves published products back to draft, removing them from the storefront. */
+export function unpublishProducts(ids: string[]): Promise<void> {
+  return apiClient.post<void>("/admin/products/bulk-unpublish", { body: { ids } });
+}
+
 export function duplicateProduct(id: string): Promise<Product> {
   return apiClient.post<Product>(`/admin/products/${id}/duplicate`);
 }

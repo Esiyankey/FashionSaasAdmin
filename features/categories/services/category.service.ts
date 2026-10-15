@@ -3,7 +3,14 @@ import type { Category } from "@/types/category";
 
 export interface CategoryInput {
   name: string;
+  slug?: string;
   parentId?: string | null;
+  title?: string;
+  description?: string;
+  imageUrl?: string | null;
+  imageAlt?: string;
+  position?: number;
+  isActive?: boolean;
 }
 
 export function getCategories(): Promise<Category[]> {

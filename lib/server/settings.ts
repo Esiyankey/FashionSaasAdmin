@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { notFound } from "@/lib/api/errors";
+import { notifyStorefront, StorefrontTag } from "@/lib/server/revalidate";
 
 function serialize(settings: {
   currency: string;
@@ -33,5 +34,7 @@ export interface UpdateSettingsInput {
 
 export async function updateSettingsForOrg(organizationId: string, input: UpdateSettingsInput) {
   const settings = await prisma.organizationSettings.update({ where: { organizationId }, data: input });
+  // Currency, tax and shipping are shown on the storefront (prices, cart estimate).
+  notifyStorefront(organizationId, [StorefrontTag.settings, StorefrontTag.content, StorefrontTag.products]);
   return serialize(settings);
 }

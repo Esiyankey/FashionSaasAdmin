@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireOrgAdmin } from "@/lib/auth/dal";
-import { handleRoute } from "@/lib/api/handler";
+import { handleRoute, paginated, parsePagination } from "@/lib/api/handler";
 import { PRODUCT_INCLUDE, serializeProduct, statusToDb } from "@/lib/api/serializers/product";
 import { createProductForOrg } from "@/lib/server/products";
 import { productFormSchema } from "@/features/products/components/ProductForm/schema";
@@ -16,8 +16,7 @@ export const GET = handleRoute(async (request: NextRequest) => {
   const categoryId = params.get("categoryId") ?? "all";
   const sortBy = params.get("sortBy") ?? "updatedAt";
   const sortDirection = params.get("sortDirection") === "asc" ? "asc" : "desc";
-  const page = Math.max(1, Number(params.get("page")) || 1);
-  const pageSize = Math.min(100, Math.max(1, Number(params.get("pageSize")) || 20));
+  const { page, pageSize } = parsePagination(params);
 
   const where: Prisma.ProductWhereInput = {
     organizationId,
@@ -27,7 +26,9 @@ export const GET = handleRoute(async (request: NextRequest) => {
       ? {
           OR: [
             { title: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
             { sku: { contains: search, mode: "insensitive" } },
+            { variants: { some: { sku: { contains: search, mode: "insensitive" } } } },
             { productType: { contains: search, mode: "insensitive" } },
           ],
         }
@@ -56,7 +57,7 @@ export const GET = handleRoute(async (request: NextRequest) => {
     prisma.product.count({ where }),
   ]);
 
-  return NextResponse.json({ items: items.map(serializeProduct), total });
+  return NextResponse.json(paginated(items.map(serializeProduct), total, { page, pageSize }));
 });
 
 export const POST = handleRoute(async (request: NextRequest) => {

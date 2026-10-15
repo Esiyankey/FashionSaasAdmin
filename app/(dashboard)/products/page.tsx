@@ -12,6 +12,8 @@ import { useProductStats } from "@/features/products/hooks/useProductStats";
 import { useDeleteProducts } from "@/features/products/hooks/useDeleteProducts";
 import { useArchiveProducts } from "@/features/products/hooks/useArchiveProducts";
 import { usePublishProducts } from "@/features/products/hooks/usePublishProducts";
+import { useUnpublishProducts } from "@/features/products/hooks/useUnpublishProducts";
+import { ApiErrorAlert } from "@/components/shared/ApiErrorAlert";
 import { useDuplicateProduct } from "@/features/products/hooks/useDuplicateProduct";
 import { ProductStatsWidgets } from "@/features/products/components/ProductStatsWidgets";
 import { ProductFilters } from "@/features/products/components/ProductFilters";
@@ -43,6 +45,7 @@ export default function ProductsPage() {
   const deleteProducts = useDeleteProducts();
   const archiveProducts = useArchiveProducts();
   const publishProducts = usePublishProducts();
+  const unpublishProducts = useUnpublishProducts();
   const duplicateProduct = useDuplicateProduct();
 
   function updateParams(patch: Partial<ProductQueryParams>) {
@@ -71,7 +74,10 @@ export default function ProductsPage() {
     router.push(`/products/${product.id}`);
   }
 
-  const isBulkPending = deleteProducts.isPending || archiveProducts.isPending || publishProducts.isPending;
+  const isBulkPending =
+    deleteProducts.isPending || archiveProducts.isPending || publishProducts.isPending || unpublishProducts.isPending;
+  const actionError =
+    deleteProducts.error ?? archiveProducts.error ?? publishProducts.error ?? unpublishProducts.error ?? duplicateProduct.error;
 
   return (
     <PageContainer
@@ -89,12 +95,17 @@ export default function ProductsPage() {
       <div className="flex flex-col gap-4">
         <ProductFilters params={params} onChange={updateParams} />
 
+        <ApiErrorAlert error={actionError} />
+
         <BulkActionsBar
           count={selectedIds.size}
           onClear={() => setSelectedIds(new Set())}
           isPending={isBulkPending}
           onPublish={() =>
             publishProducts.mutate(Array.from(selectedIds, String), { onSuccess: () => setSelectedIds(new Set()) })
+          }
+          onUnpublish={() =>
+            unpublishProducts.mutate(Array.from(selectedIds, String), { onSuccess: () => setSelectedIds(new Set()) })
           }
           onArchive={() =>
             archiveProducts.mutate(Array.from(selectedIds, String), { onSuccess: () => setSelectedIds(new Set()) })
@@ -122,6 +133,7 @@ export default function ProductsPage() {
           onDuplicate={(product) => duplicateProduct.mutate(product.id)}
           onArchive={(product) => archiveProducts.mutate([product.id])}
           onPublish={(product) => publishProducts.mutate([product.id])}
+          onUnpublish={(product) => unpublishProducts.mutate([product.id])}
           onDelete={setProductToDelete}
         />
 
@@ -141,13 +153,13 @@ export default function ProductsPage() {
         open={!!productToDelete}
         onOpenChange={(open) => !open && setProductToDelete(null)}
         title="Delete product?"
-        description={`"${productToDelete?.title}" will be permanently removed. This can't be undone.`}
+        description={`"${productToDelete?.title}" will be permanently removed. Products that have been ordered can't be deleted; archive them instead.`}
         confirmLabel="Delete"
         variant="destructive"
         isLoading={deleteProducts.isPending}
         onConfirm={() => {
           if (!productToDelete) return;
-          deleteProducts.mutate([productToDelete.id], { onSuccess: () => setProductToDelete(null) });
+          deleteProducts.mutate([productToDelete.id], { onSettled: () => setProductToDelete(null) });
         }}
       />
 
@@ -161,10 +173,8 @@ export default function ProductsPage() {
         isLoading={deleteProducts.isPending}
         onConfirm={() => {
           deleteProducts.mutate(Array.from(selectedIds, String), {
-            onSuccess: () => {
-              setSelectedIds(new Set());
-              setBulkDeleteOpen(false);
-            },
+            onSuccess: () => setSelectedIds(new Set()),
+            onSettled: () => setBulkDeleteOpen(false),
           });
         }}
       />

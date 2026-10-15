@@ -27,6 +27,7 @@ interface ProductTableProps {
   onDuplicate: (product: Product) => void;
   onArchive: (product: Product) => void;
   onPublish: (product: Product) => void;
+  onUnpublish: (product: Product) => void;
   onDelete: (product: Product) => void;
 }
 
@@ -42,6 +43,7 @@ export function ProductTable({
   onDuplicate,
   onArchive,
   onPublish,
+  onUnpublish,
   onDelete,
 }: ProductTableProps) {
   const columns: DataTableColumn<Product>[] = [
@@ -115,6 +117,7 @@ export function ProductTable({
           onDuplicate={onDuplicate}
           onArchive={onArchive}
           onPublish={onPublish}
+          onUnpublish={onUnpublish}
           onDelete={onDelete}
         />
       ),

@@ -62,3 +62,39 @@ export const storefrontConfigKeys = {
   all: ["storefront-config"] as const,
   detail: () => [...storefrontConfigKeys.all, "detail"] as const,
 };
+
+export const contentKeys = {
+  all: ["content"] as const,
+  navigation: () => [...contentKeys.all, "navigation"] as const,
+  page: (key: string) => [...contentKeys.all, "page", key] as const,
+  team: () => [...contentKeys.all, "team"] as const,
+};
+
+export const blogKeys = {
+  all: ["blog"] as const,
+  list: (params: unknown) => [...blogKeys.all, "list", params] as const,
+  detail: (id: string) => [...blogKeys.all, "detail", id] as const,
+  categories: () => [...blogKeys.all, "categories"] as const,
+};
+
+export const inboxKeys = {
+  all: ["inbox"] as const,
+  list: (params: unknown) => [...inboxKeys.all, "list", params] as const,
+  detail: (id: string) => [...inboxKeys.all, "detail", id] as const,
+};
+
+export const subscriberKeys = {
+  all: ["subscribers"] as const,
+  list: (params: unknown) => [...subscriberKeys.all, "list", params] as const,
+};
+
+export const outfitFinderKeys = {
+  all: ["outfit-finder"] as const,
+  options: () => [...outfitFinderKeys.all, "options"] as const,
+  looks: () => [...outfitFinderKeys.all, "looks"] as const,
+};
+
+export const mediaKeys = {
+  all: ["media"] as const,
+  list: (params: unknown) => [...mediaKeys.all, "list", params] as const,
+};

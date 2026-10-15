@@ -33,14 +33,14 @@ export default function StorefrontProductPage({ params }: { params: Promise<{ or
   if (isLoading || !product) return <div className="mx-auto max-w-6xl px-4 py-10 text-sm text-neutral-500">Loading…</div>;
 
   const price = selectedVariant?.price ?? product.price;
-  const image = product.images[0]?.url;
-  const canAddToCart = product.variants.length === 0 || Boolean(selectedVariant);
+  const image = product.image ?? undefined;
+  const canAddToCart = product.variants.length === 0 ? product.inStock : Boolean(selectedVariant?.available);
 
   function handleAddToCart() {
     cart.addItem({
       productId: product!.id,
       variantId: selectedVariant?.id,
-      title: product!.title,
+      title: product!.name,
       variantTitle: selectedVariant?.title,
       imageUrl: image,
       price,
@@ -55,12 +55,12 @@ export default function StorefrontProductPage({ params }: { params: Promise<{ or
         <div className="aspect-square overflow-hidden rounded-lg bg-neutral-100">
           {image && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt={product.title} className="size-full object-cover" />
+            <img src={image} alt={product.name} className="size-full object-cover" />
           )}
         </div>
         <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">{product.title}</h1>
+            <h1 className="text-2xl font-semibold">{product.name}</h1>
             <p className="mt-1 text-lg text-neutral-600">{formatCurrency(price)}</p>
           </div>
           <p className="text-sm text-neutral-500">{product.description}</p>
@@ -107,7 +107,11 @@ export default function StorefrontProductPage({ params }: { params: Promise<{ or
           </div>
 
           <Button disabled={!canAddToCart} onClick={handleAddToCart}>
-            {canAddToCart ? "Add to cart" : "Select options"}
+            {canAddToCart
+              ? "Add to cart"
+              : selectedVariant || product.variants.length === 0
+                ? "Sold out"
+                : "Select options"}
           </Button>
         </div>
       </div>

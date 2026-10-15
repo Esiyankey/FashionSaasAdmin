@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { badRequest, notFound } from "@/lib/api/errors";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { notifyStorefront, StorefrontTag } from "@/lib/server/revalidate";
 
 export interface ListInventoryParams {
   search?: string;
@@ -67,7 +68,10 @@ export interface AdjustInventoryInput {
 }
 
 export async function adjustInventoryForOrg(organizationId: string, productId: string, input: AdjustInventoryInput) {
-  const product = await prisma.product.findFirst({ where: { id: productId, organizationId }, select: { id: true } });
+  const product = await prisma.product.findFirst({
+    where: { id: productId, organizationId },
+    select: { id: true, slug: true },
+  });
   if (!product) throw notFound("Product not found");
 
   if (input.variantId) {
@@ -91,4 +95,5 @@ export async function adjustInventoryForOrg(organizationId: string, productId: s
     });
     if (result.count === 0) throw badRequest("This adjustment would result in negative stock");
   }
+  notifyStorefront(organizationId, [StorefrontTag.products, StorefrontTag.product(product.slug)]);
 }

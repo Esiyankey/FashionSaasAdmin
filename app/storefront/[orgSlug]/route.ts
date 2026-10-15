@@ -1,8 +1,10 @@
-import { NextResponse, type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { handleRoute } from "@/lib/api/handler";
+import { assetBaseFrom, publicJson } from "@/lib/api/public";
 import { getStorefrontHome } from "@/lib/server/storefront";
 
-export const GET = handleRoute(async (_request: NextRequest, ctx: RouteContext<"/storefront/[orgSlug]">) => {
+/** Store info, contact, social links, announcement bar, hero, navigation and commerce settings. */
+export const GET = handleRoute(async (request: NextRequest, ctx: RouteContext<"/storefront/[orgSlug]">) => {
   const { orgSlug } = await ctx.params;
-  return NextResponse.json(await getStorefrontHome(orgSlug));
+  return publicJson(await getStorefrontHome(orgSlug, assetBaseFrom(request)));
 });

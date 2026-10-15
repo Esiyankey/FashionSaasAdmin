@@ -32,10 +32,15 @@ enum ProductStatus {
   ARCHIVED
 }
 
+/// Fulfilment workflow: PENDING → PROCESSING → SHIPPED → DELIVERED, with
+/// CANCELLED reachable from PENDING or PROCESSING. Payment is tracked
+/// separately in PaymentStatus. (The former FULFILLED value was migrated to
+/// DELIVERED.)
 enum OrderStatus {
   PENDING
   PROCESSING
-  FULFILLED
+  SHIPPED
+  DELIVERED
   CANCELLED
 }
 
@@ -44,6 +49,35 @@ enum PaymentStatus {
   PAID
   REFUNDED
   FAILED
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContactMessageStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+enum SubscriberStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
+enum NavigationLocation {
+  HEADER
+  FOOTER
+}
+
+enum OutfitOptionType {
+  BODY_TYPE
+  SKIN_TONE
+  OCCASION
 }
 
 // ---------------------------------------------------------------------------
@@ -74,6 +108,18 @@ model Organization {
   storefront StorefrontConfig?
   settings   OrganizationSettings?
 
+  variants              ProductVariant[]
+  navigationLinks       NavigationLink[]
+  pageContents          PageContent[]
+  teamMembers           TeamMember[]
+  blogCategories        BlogCategory[]
+  blogPosts             BlogPost[]
+  contactMessages       ContactMessage[]
+  newsletterSubscribers NewsletterSubscriber[]
+  outfitOptions         OutfitOption[]
+  styleLooks            StyleLook[]
+  mediaAssets           MediaAsset[]
+
   @@map("organizations")
 }
 
@@ -83,19 +129,20 @@ model Organization {
 /// (Postgres unique indexes allow multiple NULLs, so this never restricts
 /// how many SUPER_ADMIN rows can exist).
 model User {
-  id             String       @id @default(cuid())
-  organizationId String?      @unique
+  id             String        @id @default(cuid())
+  organizationId String?       @unique
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
-  email          String       @unique
+  email          String        @unique
   passwordHash   String
   role           UserRole
-  status         UserStatus   @default(ACTIVE)
+  status         UserStatus    @default(ACTIVE)
   lastLoginAt    DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  resetTokens PasswordResetToken[]
+  resetTokens        PasswordResetToken[]
+  orderStatusChanges OrderStatusHistory[]
 
   @@map("users")
 }
@@ -121,10 +168,20 @@ model Category {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name           String
+  /// Always lower-case kebab-case (see utils/slugify.ts), so "Women" and
+  /// "women" resolve to the same category.
   slug           String
   parentId       String?
   parent         Category?    @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
   children       Category[]   @relation("CategoryTree")
+  /// Display heading on storefront cards (e.g. "For Women's"); falls back to name.
+  title          String       @default("")
+  description    String       @default("")
+  imageUrl       String?
+  imageAlt       String       @default("")
+  position       Int          @default(0)
+  /// Inactive categories are hidden from the storefront but kept for admin use.
+  isActive       Boolean      @default(true)
   archivedAt     DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -133,6 +190,7 @@ model Category {
 
   @@unique([organizationId, slug])
   @@index([organizationId])
+  @@index([organizationId, isActive, position])
   @@map("categories")
 }
 
@@ -143,6 +201,9 @@ model Product {
   title          String
   slug           String
   description    String        @default("")
+  /// Short storefront teaser, also the default meta description.
+  summary        String        @default("")
+  features       String[]
   vendor         String        @default("")
   productType    String        @default("")
   status         ProductStatus @default(DRAFT)
@@ -159,12 +220,16 @@ model Product {
   allowBackorder    Boolean @default(false)
 
   variantOptionNames String[]
-  isFeatured         Boolean  @default(false)
+  isFeatured         Boolean   @default(false)
+  /// Order within the storefront's featured list (lower first).
+  featuredPosition   Int?
+  /// First time the product was published; drives "new arrivals".
+  publishedAt        DateTime?
 
-  seoTitle         String   @default("")
-  seoDescription   String   @default("")
+  seoTitle         String  @default("")
+  seoDescription   String  @default("")
   weightKg         Float?
-  requiresShipping Boolean  @default(true)
+  requiresShipping Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -174,8 +239,14 @@ model Product {
   categories ProductCategory[]
   orderItems OrderItem[]
 
+  heroOfLooks StyleLook[]        @relation("LookHeroProduct")
+  inLooks     StyleLookProduct[]
+
   @@unique([organizationId, slug])
+  @@unique([organizationId, sku])
   @@index([organizationId, status])
+  @@index([organizationId, status, isFeatured, featuredPosition])
+  @@index([organizationId, status, price])
   @@map("products")
 }
 
@@ -186,6 +257,7 @@ model ProductCategory {
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@id([productId, categoryId])
+  @@index([categoryId])
   @@map("product_categories")
 }
 
@@ -202,21 +274,35 @@ model ProductImage {
 }
 
 /// options is a JSON array of {name, value} pairs, e.g. [{"name":"Size","value":"M"}].
+/// size / color / optionKey are derived from options on every write so they
+/// can be filtered and uniquely indexed. organizationId is denormalized from
+/// the product so SKUs can be unique per organization.
 model ProductVariant {
-  id                String  @id @default(cuid())
+  id                String       @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   productId         String
-  product           Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product           Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
   title             String
   options           Json
+  size              String?
+  color             String?
+  /// Normalized "color=black|size=s" key; unique per product.
+  optionKey         String
   sku               String?
   price             Float?
   compareAtPrice    Float?
-  inventoryQuantity Int     @default(0)
+  inventoryQuantity Int          @default(0)
+  isActive          Boolean      @default(true)
   imageId           String?
 
   orderItems OrderItem[]
 
+  @@unique([productId, optionKey])
+  @@unique([organizationId, sku])
   @@index([productId])
+  @@index([organizationId, size])
+  @@index([organizationId, color])
   @@map("product_variants")
 }
 
@@ -253,11 +339,18 @@ model Order {
   customer       Customer      @relation(fields: [customerId], references: [id])
   status         OrderStatus   @default(PENDING)
   paymentStatus  PaymentStatus @default(PENDING)
+  /// Customer's chosen method (cod | card | wallet). No payment is collected yet.
+  paymentMethod  String        @default("cod")
+  currency       String        @default("USD")
+  /// Secret handed to the guest at checkout; required to look the order up publicly.
+  accessToken    String?       @unique
 
   shippingName    String
   shippingEmail   String
   shippingPhone   String?
   shippingAddress Json
+  billingAddress  Json?
+  customerNote    String?
 
   subtotal Float
   discount Float @default(0)
@@ -265,36 +358,68 @@ model Order {
   tax      Float @default(0)
   total    Float
 
+  trackingNumber String?
+  carrier        String?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  cancelledAt    DateTime?
+  cancelReason   String?
+  internalNotes  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items OrderItem[]
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
 
   @@unique([organizationId, orderNumber])
   @@index([organizationId, status])
   @@index([organizationId, createdAt])
+  @@index([organizationId, shippingEmail])
   @@map("orders")
 }
 
 /// Snapshots product/variant data at order time so later edits to a product
 /// (name, price) never change historical orders.
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String          @id @default(cuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String?
-  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product   Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
   variantId String?
   variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
-  productName  String
-  variantTitle String?
-  sku          String?
-  quantity     Int
-  unitPrice    Float
-  total        Float
+  productName    String
+  productSlug    String?
+  variantTitle   String?
+  sku            String?
+  size           String?
+  color          String?
+  imageUrl       String?
+  quantity       Int
+  unitPrice      Float
+  compareAtPrice Float?
+  discount       Float   @default(0)
+  total          Float
 
+  @@index([orderId])
   @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id          String       @id @default(cuid())
+  orderId     String
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus  OrderStatus?
+  toStatus    OrderStatus
+  note        String?
+  changedById String?
+  changedBy   User?        @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+  @@map("order_status_history")
 }
 
 // ---------------------------------------------------------------------------
@@ -306,21 +431,41 @@ model StorefrontConfig {
   organizationId String       @unique
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  storeName           String   @default("")
-  logoUrl             String?
-  faviconUrl          String?
-  primaryColor        String   @default("#111111")
-  secondaryColor      String   @default("#f5f5f5")
-  fontFamily          String   @default("Inter")
-  heroHeadline         String?
-  heroSubheadline      String?
-  heroImageUrl         String?
-  featuredProductIds   String[]
-  featuredCategoryIds  String[]
-  footerText           String?
-  contactEmail         String?
-  contactPhone         String?
-  socialLinks          Json?
+  storeName       String   @default("")
+  logoUrl         String?
+  faviconUrl      String?
+  primaryColor    String   @default("#111111")
+  secondaryColor  String   @default("#f5f5f5")
+  fontFamily      String   @default("Inter")
+  heroBadgeText   String?
+  heroHeadline    String?
+  heroSubheadline String?
+  heroImageUrl    String?
+  heroImageAlt    String   @default("")
+  heroCtaLabel    String?
+  heroCtaHref     String?
+  /// Deprecated: featured products are driven by Product.isFeatured /
+  /// featuredPosition. Kept so existing data is not dropped; not exposed by the API.
+  featuredProductIds  String[]
+  featuredCategoryIds String[]
+  footerText          String?
+  contactEmail        String?
+  contactPhone        String?
+  addressLines        String[]
+  workingHours        String?
+  mapEmbedUrl         String?
+  /// { "instagram": "https://...", ... }
+  socialLinks         Json?
+  siteUrl             String?
+  seoTitle            String?
+  seoDescription      String?
+
+  announcementEnabled   Boolean @default(false)
+  announcementMessage   String?
+  announcementHighlight String?
+  announcementLinkLabel String?
+  announcementLinkHref  String?
+  announcementShowPhone Boolean @default(true)
 
   updatedAt DateTime @updatedAt
 
@@ -332,15 +477,248 @@ model OrganizationSettings {
   organizationId String       @unique
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  currency                 String  @default("USD")
-  timezone                 String  @default("UTC")
-  taxRatePercent           Float   @default(0)
-  shippingFlatRate         Float   @default(0)
+  currency                 String @default("USD")
+  timezone                 String @default("UTC")
+  taxRatePercent           Float  @default(0)
+  shippingFlatRate         Float  @default(0)
   freeShippingThreshold    Float?
-  orderNumberPrefix        String  @default("ORD")
-  lowStockThresholdDefault Int     @default(5)
+  orderNumberPrefix        String @default("ORD")
+  lowStockThresholdDefault Int    @default(5)
 
   updatedAt DateTime @updatedAt
 
   @@map("organization_settings")
+}
+
+// ---------------------------------------------------------------------------
+// Storefront content (CMS)
+// ---------------------------------------------------------------------------
+
+model NavigationLink {
+  id             String             @id @default(cuid())
+  organizationId String
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       NavigationLocation
+  label          String
+  href           String
+  position       Int                @default(0)
+  isVisible      Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([organizationId, location, position])
+  @@map("navigation_links")
+}
+
+/// Structured page content keyed by page (currently "about"). The JSON shape is
+/// validated per key in lib/server/content.ts.
+model PageContent {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  key            String
+  content        Json
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, key])
+  @@map("page_contents")
+}
+
+model TeamMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  role           String       @default("")
+  imageUrl       String?
+  position       Int          @default(0)
+  isVisible      Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, position])
+  @@map("team_members")
+}
+
+// ---------------------------------------------------------------------------
+// Blog
+// ---------------------------------------------------------------------------
+
+model BlogCategory {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String
+  createdAt      DateTime     @default(now())
+
+  posts BlogPost[]
+
+  @@unique([organizationId, slug])
+  @@map("blog_categories")
+}
+
+model BlogPost {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  slug           String
+  excerpt        String        @default("")
+  /// Markdown body.
+  content        String        @default("")
+  coverImageUrl  String?
+  coverImageAlt  String        @default("")
+  authorName     String        @default("")
+  categoryId     String?
+  category       BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  status         ContentStatus @default(DRAFT)
+  isFeatured     Boolean       @default(false)
+  publishedAt    DateTime?
+  seoTitle       String        @default("")
+  seoDescription String        @default("")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, status, publishedAt(sort: Desc)])
+  @@map("blog_posts")
+}
+
+// ---------------------------------------------------------------------------
+// Inbox & newsletter
+// ---------------------------------------------------------------------------
+
+model ContactMessage {
+  id             String               @id @default(cuid())
+  organizationId String
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  email          String
+  phone          String?
+  subject        String
+  message        String
+  status         ContactMessageStatus @default(NEW)
+  internalNote   String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([organizationId, status, createdAt])
+  @@map("contact_messages")
+}
+
+model NewsletterSubscriber {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Stored trimmed and lower-cased.
+  email          String
+  status         SubscriberStatus @default(SUBSCRIBED)
+  source         String           @default("website")
+  consentAt      DateTime         @default(now())
+  unsubscribedAt DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([organizationId, email])
+  @@index([organizationId, status, createdAt])
+  @@map("newsletter_subscribers")
+}
+
+// ---------------------------------------------------------------------------
+// Outfit Finder
+// ---------------------------------------------------------------------------
+
+/// One row per selectable quiz option (body type, skin tone or occasion).
+model OutfitOption {
+  id             String           @id @default(cuid())
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  type           OutfitOptionType
+  key            String
+  label          String
+  /// #RRGGBB, skin tones only.
+  hex            String?
+  imageUrl       String?
+  position       Int              @default(0)
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  looksForOccasion StyleLook[]          @relation("LookOccasion")
+  lookConditions   StyleLookCondition[]
+
+  @@unique([organizationId, type, key])
+  @@index([organizationId, type, position])
+  @@map("outfit_options")
+}
+
+/// A curated look returned by the Outfit Finder for an occasion, optionally
+/// restricted to specific body types / skin tones (no restriction = any).
+model StyleLook {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  occasionId     String
+  occasion       OutfitOption @relation("LookOccasion", fields: [occasionId], references: [id], onDelete: Cascade)
+  styleName      String
+  description    String       @default("")
+  tags           String[]
+  heroProductId  String?
+  heroProduct    Product?     @relation("LookHeroProduct", fields: [heroProductId], references: [id], onDelete: SetNull)
+  position       Int          @default(0)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  conditions StyleLookCondition[]
+  products   StyleLookProduct[]
+
+  @@index([organizationId, occasionId, isActive])
+  @@map("style_looks")
+}
+
+/// Body-type / skin-tone restrictions of a look.
+model StyleLookCondition {
+  lookId   String
+  look     StyleLook    @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  optionId String
+  option   OutfitOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@id([lookId, optionId])
+  @@map("style_look_conditions")
+}
+
+/// "Complete the look" products, ordered.
+model StyleLookProduct {
+  lookId    String
+  look      StyleLook @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position  Int       @default(0)
+
+  @@id([lookId, productId])
+  @@map("style_look_products")
+}
+
+// ---------------------------------------------------------------------------
+// Media
+// ---------------------------------------------------------------------------
+
+/// Uploaded images are stored in Postgres and served publicly from
+/// GET /media/{id}. This needs no extra infrastructure; swap for object
+/// storage (S3/R2/Blob) if volume grows.
+model MediaAsset {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  filename       String
+  mimeType       String
+  sizeBytes      Int
+  data           Bytes
+  alt            String       @default("")
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("media_assets")
 }

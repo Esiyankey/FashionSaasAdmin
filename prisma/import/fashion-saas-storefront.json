@@ -1,0 +1,505 @@
+{
+  "_source": "Snapshot of the Fashion SaaS storefront's former mock data (services/mocks/*.ts, app/lib/blog-data.ts), taken 2026-10-05. Imported once by prisma/import-storefront.ts; the database is the source of truth afterwards.",
+  "products": [
+    {
+      "id": 1,
+      "slug": "floral-summer-dress",
+      "name": "Floral Summer Dress",
+      "category": "Women",
+      "productType": "dress",
+      "price": 75,
+      "originalPrice": 150,
+      "discount": 50,
+      "rating": 4.8,
+      "image": "/images/women/woman-dress-1.jpg",
+      "summary": "A light, flattering day dress with a breezy floral print.",
+      "description": "Designed for warm-weather dressing, this floral silhouette pairs an easy drape with polished finishing details for all-day wear.",
+      "features": [
+        "Breathable cotton blend with a soft hand feel",
+        "Relaxed silhouette with a defined waist",
+        "Versatile enough for daytime events or vacation styling"
+      ],
+      "gallery": [
+        "/images/women/woman-dress-1.jpg",
+        "/images/women/woman-dress-3.jpg",
+        "/images/women/woman-dress-4.jpg"
+      ],
+      "availableSizes": [
+        "XS",
+        "S",
+        "M",
+        "L"
+      ],
+      "availableColors": [
+        "Rose",
+        "Ivory",
+        "Sand"
+      ],
+      "hasCountdown": true
+    },
+    {
+      "id": 2,
+      "slug": "boho-chic-gown",
+      "name": "Boho Chic Gown",
+      "category": "Women",
+      "productType": "dress",
+      "price": 165,
+      "originalPrice": 220,
+      "discount": 25,
+      "rating": 4.9,
+      "image": "/images/women/woman-dress-3.jpg",
+      "summary": "A flowing statement gown with elevated evening character.",
+      "description": "This occasion-ready gown balances texture, movement, and structure for a sophisticated look that still feels effortless.",
+      "features": [
+        "Fluid full-length skirt with soft volume",
+        "Elegant neckline suited for formal styling",
+        "Comfortable inner lining for extended wear"
+      ],
+      "gallery": [
+        "/images/women/woman-dress-3.jpg",
+        "/images/women/woman-dress-1.jpg",
+        "/images/women/woman-dress-4.jpg"
+      ],
+      "availableSizes": [
+        "S",
+        "M",
+        "L"
+      ],
+      "availableColors": [
+        "Gold",
+        "Cocoa",
+        "Olive"
+      ]
+    },
+    {
+      "id": 3,
+      "slug": "evening-silk-dress",
+      "name": "Evening Silk Dress",
+      "category": "Women",
+      "productType": "dress",
+      "price": 90,
+      "originalPrice": 100,
+      "discount": 10,
+      "rating": 4.8,
+      "image": "/images/women/woman-dress-4.jpg",
+      "summary": "A refined silk-touch dress for elevated evening looks.",
+      "description": "A sleek evening dress finished with a subtle sheen and a graceful silhouette that works for celebrations and formal dinners alike.",
+      "features": [
+        "Smooth silk-touch fabrication",
+        "Structured shoulders with fluid drape",
+        "Easy to layer with outerwear and accessories"
+      ],
+      "gallery": [
+        "/images/women/woman-dress-4.jpg",
+        "/images/women/woman-dress2.jpg",
+        "/images/women/woman-dress-3.jpg"
+      ],
+      "availableSizes": [
+        "XS",
+        "S",
+        "M",
+        "L"
+      ],
+      "availableColors": [
+        "Midnight",
+        "Pearl"
+      ]
+    },
+    {
+      "id": 4,
+      "slug": "casual-day-dress",
+      "name": "Casual Day Dress",
+      "category": "Women",
+      "productType": "dress",
+      "price": 75,
+      "originalPrice": 150,
+      "discount": 25,
+      "rating": 4.7,
+      "image": "/images/women/woman-dress2.jpg",
+      "summary": "An easy wardrobe staple for daily wear and travel.",
+      "description": "Made for repeat styling, this everyday dress combines comfort, movement, and a clean silhouette that layers well through the seasons.",
+      "features": [
+        "Soft stretch fabric for comfort",
+        "Minimal silhouette for easy styling",
+        "Machine washable for simple care"
+      ],
+      "gallery": [
+        "/images/women/woman-dress2.jpg",
+        "/images/women/woman-dress-1.jpg",
+        "/images/women/woman-dress-4.jpg"
+      ],
+      "availableSizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "availableColors": [
+        "Stone",
+        "Black"
+      ]
+    },
+    {
+      "id": 5,
+      "slug": "urban-streetwear-set",
+      "name": "Urban Streetwear Set",
+      "category": "Men",
+      "productType": "shirt",
+      "price": 120,
+      "originalPrice": 180,
+      "discount": 33,
+      "rating": 4.9,
+      "image": "/images/men/male-outfit-1.jpg",
+      "summary": "A layered streetwear edit with sharp casual structure.",
+      "description": "This coordinated outfit is built around premium basics, clean proportion, and comfortable fabrics for an elevated off-duty look.",
+      "features": [
+        "Layer-friendly fit with contemporary proportions",
+        "Durable fabric suited to everyday wear",
+        "Easy to split into separate looks"
+      ],
+      "gallery": [
+        "/images/men/male-outfit-1.jpg",
+        "/images/men/male-outfit-2.jpg",
+        "/images/men/male-outfit-3.jpg"
+      ],
+      "availableSizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "availableColors": [
+        "Graphite",
+        "Khaki"
+      ]
+    },
+    {
+      "id": 6,
+      "slug": "classic-casual-look",
+      "name": "Classic Casual Look",
+      "category": "Men",
+      "productType": "shirt",
+      "price": 45,
+      "originalPrice": 75,
+      "discount": 40,
+      "rating": 4.6,
+      "image": "/images/men/male-outfit-2.jpg",
+      "summary": "A clean casual look designed for repeat weekly wear.",
+      "description": "A polished off-duty staple with easy layering potential, grounded in timeless tones and comfortable tailoring.",
+      "features": [
+        "Soft-touch fabric blend",
+        "Straightforward styling for work or weekends",
+        "Lightweight enough for year-round layering"
+      ],
+      "gallery": [
+        "/images/men/male-outfit-2.jpg",
+        "/images/men/male-outfit-1.jpg",
+        "/images/men/male-outfit-3.jpg"
+      ],
+      "availableSizes": [
+        "M",
+        "L",
+        "XL"
+      ],
+      "availableColors": [
+        "Sand",
+        "Navy"
+      ]
+    },
+    {
+      "id": 7,
+      "slug": "premium-autumn-outfit",
+      "name": "Premium Autumn Outfit",
+      "category": "Men",
+      "productType": "shirt",
+      "price": 185,
+      "originalPrice": 280,
+      "discount": 34,
+      "rating": 4.8,
+      "image": "/images/men/male-outfit-3.jpg",
+      "summary": "A premium layered set tuned for cooler weather.",
+      "description": "This autumn-ready combination offers warmth, structure, and a refined neutral palette suited to seasonal city dressing.",
+      "features": [
+        "Textured fabrics for seasonal depth",
+        "Relaxed layering pieces with clean finish",
+        "Premium construction for long-term use"
+      ],
+      "gallery": [
+        "/images/men/male-outfit-3.jpg",
+        "/images/men/male-outfits-4.jpg",
+        "/images/men/male-outfit-1.jpg"
+      ],
+      "availableSizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "availableColors": [
+        "Olive",
+        "Charcoal"
+      ]
+    },
+    {
+      "id": 8,
+      "slug": "modern-minimalist-style",
+      "name": "Modern Minimalist Style",
+      "category": "Men",
+      "productType": "shirt",
+      "price": 65,
+      "originalPrice": 95,
+      "discount": 32,
+      "rating": 4.7,
+      "image": "/images/men/male-outfits-4.jpg",
+      "summary": "A minimal wardrobe formula anchored by sharp essentials.",
+      "description": "Built for understated dressing, this outfit focuses on fit, texture, and a muted palette that works across occasions.",
+      "features": [
+        "Modern silhouette with relaxed confidence",
+        "Neutral palette for easy restyling",
+        "Comfort-focused construction"
+      ],
+      "gallery": [
+        "/images/men/male-outfits-4.jpg",
+        "/images/men/male-outfit-2.jpg",
+        "/images/men/male-outfit-3.jpg"
+      ],
+      "availableSizes": [
+        "M",
+        "L",
+        "XL"
+      ],
+      "availableColors": [
+        "Slate",
+        "Cream"
+      ]
+    },
+    {
+      "id": 9,
+      "slug": "leather-designer-wallet",
+      "name": "Leather Designer Wallet",
+      "category": "Accessories",
+      "productType": "accessory",
+      "price": 35,
+      "originalPrice": 60,
+      "discount": 42,
+      "rating": 4.5,
+      "image": "/images/accessories/wallet-image-1.jpg",
+      "summary": "A compact leather wallet with polished finishing details.",
+      "description": "A functional daily essential with thoughtful compartments, durable construction, and a refined profile that slips easily into any bag.",
+      "features": [
+        "Compact bi-fold construction",
+        "Premium finish with durable stitching",
+        "Fits daily essentials without added bulk"
+      ],
+      "gallery": [
+        "/images/accessories/wallet-image-1.jpg",
+        "/images/accessories/jewelry-image-1.jpg",
+        "/images/accessories/jewelry-image-2.jpg"
+      ],
+      "availableSizes": [
+        "One Size"
+      ],
+      "availableColors": [
+        "Walnut",
+        "Black"
+      ]
+    },
+    {
+      "id": 10,
+      "slug": "golden-pendant-necklace",
+      "name": "Golden Pendant Necklace",
+      "category": "Accessories",
+      "productType": "accessory",
+      "price": 35,
+      "originalPrice": 50,
+      "discount": 30,
+      "rating": 4.6,
+      "image": "/images/accessories/jewelry-image-1.jpg",
+      "summary": "A delicate pendant necklace for everyday layering.",
+      "description": "This lightweight necklace adds subtle polish to basics and occasion looks with a simple silhouette and warm metallic finish.",
+      "features": [
+        "Lightweight chain for comfortable wear",
+        "Minimal pendant suited to layering",
+        "Classic finish with timeless appeal"
+      ],
+      "gallery": [
+        "/images/accessories/jewelry-image-1.jpg",
+        "/images/accessories/jewelry-image-2.jpg",
+        "/images/accessories/wallet-image-1.jpg"
+      ],
+      "availableSizes": [
+        "One Size"
+      ],
+      "availableColors": [
+        "Gold"
+      ]
+    },
+    {
+      "id": 11,
+      "slug": "starlight-silver-ring",
+      "name": "Starlight Silver Ring",
+      "category": "Accessories",
+      "productType": "accessory",
+      "price": 85,
+      "originalPrice": 140,
+      "discount": 39,
+      "rating": 4.8,
+      "image": "/images/accessories/jewelry-image-2.jpg",
+      "summary": "A sculpted silver-tone ring with standout polish.",
+      "description": "Made to elevate minimal styling, this ring balances a clean silhouette with a luminous finish for daily wear or gifting.",
+      "features": [
+        "Smooth polished finish",
+        "Comfortable everyday profile",
+        "Pairs well with mixed-metal styling"
+      ],
+      "gallery": [
+        "/images/accessories/jewelry-image-2.jpg",
+        "/images/accessories/jewelry-image-1.jpg",
+        "/images/accessories/heel-image-1.jpg"
+      ],
+      "availableSizes": [
+        "6",
+        "7",
+        "8"
+      ],
+      "availableColors": [
+        "Silver"
+      ]
+    },
+    {
+      "id": 12,
+      "slug": "classic-high-heels",
+      "name": "Classic High Heels",
+      "category": "Accessories",
+      "productType": "accessory",
+      "price": 95,
+      "originalPrice": 150,
+      "discount": 37,
+      "rating": 4.9,
+      "image": "/images/accessories/heel-image-1.jpg",
+      "summary": "A clean, occasion-ready heel with timeless shape.",
+      "description": "Designed to pair with dresses, tailoring, and evening edits, these heels combine classic lines with dependable comfort.",
+      "features": [
+        "Elegant heel height for versatile wear",
+        "Streamlined shape for formal and smart-casual styling",
+        "Cushioned footbed for added comfort"
+      ],
+      "gallery": [
+        "/images/accessories/heel-image-1.jpg",
+        "/images/accessories/jewelry-image-1.jpg",
+        "/images/accessories/wallet-image-1.jpg"
+      ],
+      "availableSizes": [
+        "36",
+        "37",
+        "38",
+        "39",
+        "40"
+      ],
+      "availableColors": [
+        "Black",
+        "Champagne"
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "id": "women",
+      "title": "For Women's",
+      "itemCount": "2500+",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do",
+      "image": "/images/women/woman-image-1.jpg",
+      "imageAlt": "Two women in floral dresses",
+      "subCategories": [
+        "T-Shirt and Blouses",
+        "Dresses",
+        "Jackets & Coats",
+        "Jeans",
+        "Knit",
+        "Sarees"
+      ]
+    },
+    {
+      "id": "men",
+      "title": "For Men's",
+      "itemCount": "1500+",
+      "image": "/images/men/men-image-2.jpg",
+      "imageAlt": "Man in sunglasses and beige blazer",
+      "subCategories": [
+        "T-Shirts and Shirts",
+        "Jackets & Coats",
+        "Jeans"
+      ]
+    },
+    {
+      "id": "accessories",
+      "title": "Accessories",
+      "itemCount": "800+",
+      "image": "/images/accessories/accessories-image-1.jpg",
+      "imageAlt": "Accessories collection",
+      "subCategories": [
+        "Handbags",
+        "Watches",
+        "Sunglasses",
+        "Hat"
+      ]
+    }
+  ],
+  "blogPosts": [
+    {
+      "id": 1,
+      "slug": "perfect-duffle-guide-2024",
+      "date": "October 24, 2023",
+      "category": "Fashion & Lifestyle",
+      "title": "The Perfect Guide To Pick Your Perfect Duffle In 2024",
+      "excerpt": "A practical packing and styling guide for choosing a travel bag that fits weekend trips, daily carry, and a polished wardrobe.",
+      "image": "/images/blog/blog-image1.jpg"
+    },
+    {
+      "id": 2,
+      "slug": "products-with-purpose-clean-denim",
+      "date": "October 24, 2023",
+      "category": "Denim Industry",
+      "title": "Products With Purpose: What Clean Denim Really Means",
+      "excerpt": "A closer look at how denim care, sourcing, and finishing influence the lifespan and footprint of everyday essentials.",
+      "image": "/images/blog/blog-image-2.jpg"
+    },
+    {
+      "id": 3,
+      "slug": "gots-sustainability-explained",
+      "date": "October 24, 2023",
+      "category": "Gold Style",
+      "title": "Gold Seal of Sustainability: GOTS, Finally Explained",
+      "excerpt": "The certification terms behind modern sustainable fashion, and what they signal about sourcing, labor, and material quality.",
+      "image": "/images/blog/blog-image-3.jpg"
+    },
+    {
+      "id": 4,
+      "slug": "made-to-order-collection-launch",
+      "date": "October 24, 2023",
+      "category": "Clothes Handmade",
+      "title": "First Made-To-Order Collection: Why It Matters",
+      "excerpt": "How smaller production runs reduce waste, improve fit, and create a more intentional shopping experience for premium basics.",
+      "image": "/images/blog/blog-image-4.jpg"
+    },
+    {
+      "id": 5,
+      "slug": "embracing-change-one-piece-at-a-time",
+      "date": "October 24, 2023",
+      "category": "Change Style",
+      "title": "What If: Embracing Change, One Piece At A Time",
+      "excerpt": "A reflection on evolving personal style through versatile garments, fewer impulse purchases, and stronger wardrobe foundations.",
+      "image": "/images/blog/blog-image5.jpg"
+    },
+    {
+      "id": 6,
+      "slug": "journey-towards-conscious-fashion",
+      "date": "October 24, 2023",
+      "category": "Design Fashion",
+      "title": "Our Journey Towards A More Conscious Fashion Industry",
+      "excerpt": "Why durable fabrics, timeless silhouettes, and transparent design decisions remain central to the next era of fashion retail.",
+      "image": "/images/blog/blog-image-6.jpg"
+    }
+  ]
+}

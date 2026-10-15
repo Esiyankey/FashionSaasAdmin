@@ -5,7 +5,8 @@ import { formatCurrency, formatRelativeTime } from "@/utils/format";
 import type { RecentOrderStatus, RecentOrderSummary } from "../types";
 
 const statusTones: Record<RecentOrderStatus, StatusTone> = {
-  FULFILLED: "success",
+  DELIVERED: "success",
+  SHIPPED: "info",
   PROCESSING: "info",
   PENDING: "warning",
   CANCELLED: "destructive",

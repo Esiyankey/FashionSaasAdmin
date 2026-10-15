@@ -20,4 +20,10 @@ export const ORG_ADMIN_ONLY_PREFIXES: string[] = [
   "/inventory",
   "/settings",
   "/storefront",
+  "/content",
+  "/blog",
+  "/inbox",
+  "/subscribers",
+  "/outfit-finder",
+  "/media-library",
 ];

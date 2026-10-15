@@ -10,7 +10,8 @@ import { StatusChip } from "@/components/shared/StatusChip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useOrders } from "@/features/orders/hooks/useOrders";
 import { formatCurrency, formatDate } from "@/utils/format";
-import type { Order, OrderQueryParams, OrderStatus } from "@/features/orders/types";
+import type { Order, OrderQueryParams } from "@/features/orders/types";
+import { ORDER_STATUSES, ORDER_STATUS_LABEL, ORDER_STATUS_TONE } from "@/features/orders/status";
 
 const DEFAULT_PARAMS: OrderQueryParams = {
   search: "",
@@ -20,12 +21,6 @@ const DEFAULT_PARAMS: OrderQueryParams = {
   pageSize: 10,
 };
 
-const STATUS_TONE: Record<OrderStatus, "success" | "warning" | "destructive" | "info"> = {
-  PENDING: "warning",
-  PROCESSING: "info",
-  FULFILLED: "success",
-  CANCELLED: "destructive",
-};
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -38,14 +33,24 @@ export default function OrdersPage() {
 
   const columns: DataTableColumn<Order>[] = [
     { id: "orderNumber", header: "Order", cell: (order) => <span className="font-medium">{order.orderNumber}</span> },
-    { id: "customer", header: "Customer", cell: (order) => order.customer.name },
-    { id: "status", header: "Status", cell: (order) => <StatusChip label={order.status} tone={STATUS_TONE[order.status]} /> },
+    {
+      id: "customer",
+      header: "Customer",
+      cell: (order) => (
+        <div>
+          <p>{order.shippingAddress.name}</p>
+          <p className="text-xs text-muted-foreground">{order.shippingAddress.email}</p>
+        </div>
+      ),
+    },
+    { id: "items", header: "Items", cell: (order) => order.items.reduce((sum, item) => sum + item.quantity, 0) },
+    { id: "status", header: "Status", cell: (order) => <StatusChip label={ORDER_STATUS_LABEL[order.status]} tone={ORDER_STATUS_TONE[order.status]} /> },
     {
       id: "paymentStatus",
       header: "Payment",
       cell: (order) => <StatusChip label={order.paymentStatus} tone={order.paymentStatus === "PAID" ? "success" : "muted"} />,
     },
-    { id: "total", header: "Total", cell: (order) => formatCurrency(order.total) },
+    { id: "total", header: "Total", cell: (order) => formatCurrency(order.total, order.currency) },
     { id: "createdAt", header: "Placed", cell: (order) => formatDate(order.createdAt) },
   ];
 
@@ -56,7 +61,7 @@ export default function OrdersPage() {
           <SearchInput
             value={params.search}
             onChange={(value) => updateParams({ search: value })}
-            placeholder="Search by order number or customer"
+            placeholder="Search order number, name, email or phone"
           />
           <Select value={params.status} onValueChange={(value) => updateParams({ status: value as OrderQueryParams["status"] })}>
             <SelectTrigger className="w-full sm:w-44">
@@ -64,10 +69,11 @@ export default function OrdersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="PROCESSING">Processing</SelectItem>
-              <SelectItem value="FULFILLED">Fulfilled</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              {ORDER_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {ORDER_STATUS_LABEL[status]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select

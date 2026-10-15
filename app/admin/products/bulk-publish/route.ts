@@ -4,7 +4,7 @@ import { requireOrgAdmin } from "@/lib/auth/dal";
 import { handleRoute } from "@/lib/api/handler";
 import { bulkSetProductStatus } from "@/lib/server/products";
 
-const bodySchema = z.object({ ids: z.array(z.string()).min(1) });
+const bodySchema = z.object({ ids: z.array(z.string()).min(1).max(200) });
 
 export const POST = handleRoute(async (request: NextRequest) => {
   const { organizationId } = await requireOrgAdmin();

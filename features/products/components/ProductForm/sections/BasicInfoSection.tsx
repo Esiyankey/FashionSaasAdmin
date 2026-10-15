@@ -27,12 +27,44 @@ export function BasicInfoSection() {
       />
       <FormField
         control={control}
+        name="summary"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Summary</FormLabel>
+            <FormControl>
+              <Input placeholder="One-line teaser shown on product cards and in search results" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
         name="description"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Description</FormLabel>
             <FormControl>
               <Textarea rows={5} placeholder="Describe the product..." {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="features"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Key features</FormLabel>
+            <FormControl>
+              <Textarea
+                rows={3}
+                placeholder={"One feature per line, e.g.\nBreathable cotton blend"}
+                value={field.value.join("\n")}
+                onChange={(event) => field.onChange(event.target.value.split("\n"))}
+                onBlur={() => field.onChange(field.value.map((line) => line.trim()).filter(Boolean))}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

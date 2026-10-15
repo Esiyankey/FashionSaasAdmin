@@ -22,6 +22,7 @@ export interface ProductVariant {
   price?: number;
   compareAtPrice?: number;
   inventoryQuantity: number;
+  isActive?: boolean;
   imageId?: string;
 }
 
@@ -47,6 +48,8 @@ export interface Product {
   title: string;
   slug: string;
   description: string;
+  summary: string;
+  features: string[];
   vendor: string;
   productType: string;
   status: ProductStatus;
@@ -63,12 +66,14 @@ export interface Product {
   seo: ProductSeo;
   shipping: ProductShipping;
   isFeatured: boolean;
+  featuredPosition?: number;
+  publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 /** Submitted by `ProductForm` — generated/server-owned fields (`id`, `slug`, timestamps) are excluded. */
-export type ProductInput = Omit<Product, "id" | "slug" | "createdAt" | "updatedAt">;
+export type ProductInput = Omit<Product, "id" | "slug" | "createdAt" | "updatedAt" | "publishedAt">;
 
 export interface ProductStats {
   total: number;

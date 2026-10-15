@@ -15,7 +15,7 @@ export default function StorefrontHomePage({ params }: { params: Promise<{ orgSl
 
   const { data, isLoading } = useQuery({
     queryKey: ["storefront-products", orgSlug, page],
-    queryFn: () => getStorefrontProducts(orgSlug, { page, pageSize: 12 }),
+    queryFn: () => getStorefrontProducts(orgSlug, { page, pageSize: 12, sort: "newest" }),
   });
 
   return (
@@ -34,24 +34,28 @@ export default function StorefrontHomePage({ params }: { params: Promise<{ orgSl
           {data.items.map((product) => (
             <div key={product.id} className="flex flex-col gap-2">
               <Link href={`/store/${orgSlug}/products/${product.slug}`} className="block aspect-square overflow-hidden rounded-lg bg-neutral-100">
-                {product.images[0] && (
+                {product.image && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={product.images[0].url} alt={product.title} className="size-full object-cover transition-transform hover:scale-105" />
+                  <img src={product.image} alt={product.name} className="size-full object-cover transition-transform hover:scale-105" />
                 )}
               </Link>
               <Link href={`/store/${orgSlug}/products/${product.slug}`} className="text-sm font-medium hover:underline">
-                {product.title}
+                {product.name}
               </Link>
               <p className="text-sm text-neutral-500">{formatCurrency(product.price)}</p>
-              {product.variants.length === 0 ? (
+              {!product.inStock ? (
+                <Button size="sm" variant="outline" disabled>
+                  Sold out
+                </Button>
+              ) : product.variants.length === 0 ? (
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() =>
                     cart.addItem({
                       productId: product.id,
-                      title: product.title,
-                      imageUrl: product.images[0]?.url,
+                      title: product.name,
+                      imageUrl: product.image ?? undefined,
                       price: product.price,
                       quantity: 1,
                     })
@@ -76,7 +80,7 @@ export default function StorefrontHomePage({ params }: { params: Promise<{ orgSl
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
             Previous
           </Button>
-          <Button variant="outline" size="sm" disabled={page * 12 >= data.total} onClick={() => setPage((p) => p + 1)}>
+          <Button variant="outline" size="sm" disabled={page >= data.totalPages} onClick={() => setPage((p) => p + 1)}>
             Next
           </Button>
         </div>

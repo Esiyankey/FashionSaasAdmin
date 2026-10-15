@@ -6,14 +6,31 @@ import { PageContainer } from "@/components/shared/PageContainer";
 import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
 import { Modal } from "@/components/shared/Modal";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
+import { ApiErrorAlert } from "@/components/shared/ApiErrorAlert";
+import { StatusChip } from "@/components/shared/StatusChip";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageField } from "@/features/media/components/ImageField";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { useCreateCategory, useDeleteCategory, useUpdateCategory } from "@/features/categories/hooks/useCategoryMutations";
-import { ApiError } from "@/services/http-client";
+import type { CategoryInput } from "@/features/categories/services/category.service";
 import type { Category } from "@/types/category";
+
+const EMPTY_FORM: CategoryInput = {
+  name: "",
+  slug: "",
+  parentId: null,
+  title: "",
+  description: "",
+  imageUrl: null,
+  imageAlt: "",
+  position: 0,
+  isActive: true,
+};
 
 export default function CategoriesPage() {
   const { data: categories, isLoading, isError, refetch } = useCategories();
@@ -21,53 +38,82 @@ export default function CategoriesPage() {
   const deleteCategory = useDeleteCategory();
 
   const [editing, setEditing] = useState<Category | null>(null);
-  const [isCreateOpen, setCreateOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [parentId, setParentId] = useState<string>("none");
-  const [formError, setFormError] = useState<string | null>(null);
+  const [isFormOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState<CategoryInput>(EMPTY_FORM);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   const updateCategory = useUpdateCategory(editing?.id ?? "");
+  const saving = editing ? updateCategory : createCategory;
 
   function openCreate() {
-    setName("");
-    setParentId("none");
-    setFormError(null);
-    setCreateOpen(true);
+    setEditing(null);
+    setForm({ ...EMPTY_FORM, position: categories?.length ?? 0 });
+    createCategory.reset();
+    setFormOpen(true);
   }
 
   function openEdit(category: Category) {
     setEditing(category);
-    setName(category.name);
-    setParentId(category.parentId ?? "none");
-    setFormError(null);
+    setForm({
+      name: category.name,
+      slug: category.slug,
+      parentId: category.parentId,
+      title: category.title,
+      description: category.description,
+      imageUrl: category.imageUrl,
+      imageAlt: category.imageAlt,
+      position: category.position,
+      isActive: category.isActive,
+    });
+    updateCategory.reset();
+    setFormOpen(true);
   }
 
-  async function handleCreate() {
-    try {
-      await createCategory.mutateAsync({ name, parentId: parentId === "none" ? null : parentId });
-      setCreateOpen(false);
-    } catch (error) {
-      setFormError(error instanceof ApiError ? error.message : "Unable to create category");
-    }
-  }
-
-  async function handleUpdate() {
-    if (!editing) return;
-    try {
-      await updateCategory.mutateAsync({ name, parentId: parentId === "none" ? null : parentId });
-      setEditing(null);
-    } catch (error) {
-      setFormError(error instanceof ApiError ? error.message : "Unable to update category");
-    }
+  function handleSave() {
+    const input = { ...form, slug: form.slug || undefined };
+    saving.mutate(input, { onSuccess: () => setFormOpen(false) });
   }
 
   const parentName = (id: string | null) => categories?.find((c) => c.id === id)?.name ?? "—";
+  const parentOptions = (categories ?? []).filter((category) => !category.parentId && category.id !== editing?.id);
 
   const columns: DataTableColumn<Category>[] = [
-    { id: "name", header: "Name", cell: (category) => <span className="font-medium">{category.name}</span> },
-    { id: "slug", header: "Slug", cell: (category) => category.slug },
+    {
+      id: "image",
+      header: "",
+      cell: (category) =>
+        category.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={category.imageUrl} alt="" className="size-10 rounded object-cover" />
+        ) : (
+          <div className="size-10 rounded bg-muted" />
+        ),
+    },
+    {
+      id: "name",
+      header: "Name",
+      cell: (category) => (
+        <div>
+          <p className="font-medium">{category.name}</p>
+          {category.title && <p className="text-xs text-muted-foreground">{category.title}</p>}
+        </div>
+      ),
+    },
+    { id: "slug", header: "Slug", cell: (category) => <span className="font-mono text-xs">{category.slug}</span> },
     { id: "parent", header: "Parent", cell: (category) => parentName(category.parentId) },
+    {
+      id: "products",
+      header: "Products",
+      cell: (category) => `${category.publishedProductCount} live / ${category.productCount}`,
+    },
+    { id: "position", header: "Order", cell: (category) => category.position },
+    {
+      id: "status",
+      header: "Status",
+      cell: (category) => (
+        <StatusChip label={category.isActive ? "Active" : "Hidden"} tone={category.isActive ? "success" : "muted"} />
+      ),
+    },
     {
       id: "actions",
       header: "",
@@ -76,7 +122,7 @@ export default function CategoriesPage() {
           <Button size="sm" variant="outline" onClick={() => openEdit(category)}>
             Edit
           </Button>
-          <Button size="icon" variant="outline" onClick={() => setCategoryToDelete(category)}>
+          <Button size="icon" variant="outline" aria-label="Archive category" onClick={() => setCategoryToDelete(category)}>
             <Trash2 />
           </Button>
         </div>
@@ -88,7 +134,7 @@ export default function CategoriesPage() {
   return (
     <PageContainer
       title="Categories"
-      description="Organize your catalog into categories and subcategories."
+      description="Organize your catalog. Active categories appear in storefront filters and navigation."
       actions={
         <Button onClick={openCreate}>
           <Plus />
@@ -96,6 +142,7 @@ export default function CategoriesPage() {
         </Button>
       }
     >
+      <ApiErrorAlert error={deleteCategory.error} className="mb-4" />
       <DataTable
         columns={columns}
         data={categories ?? []}
@@ -107,21 +154,42 @@ export default function CategoriesPage() {
         emptyDescription="Create your first category to start organizing products."
       />
 
-      <Modal open={isCreateOpen} onOpenChange={setCreateOpen} title="New category">
-        <div className="flex flex-col gap-4">
+      <Modal open={isFormOpen} onOpenChange={setFormOpen} title={editing ? "Edit category" : "New category"}>
+        <div className="grid max-h-[70vh] gap-4 overflow-y-auto pr-1 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="new-name">Name</Label>
-            <Input id="new-name" value={name} onChange={(event) => setName(event.target.value)} />
+            <Label htmlFor="cat-name">Name (filter label)</Label>
+            <Input id="cat-name" value={form.name} onChange={(event) => setForm((f) => ({ ...f, name: event.target.value }))} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cat-slug">Slug</Label>
+            <Input
+              id="cat-slug"
+              placeholder="Generated from the name"
+              value={form.slug ?? ""}
+              onChange={(event) => setForm((f) => ({ ...f, slug: event.target.value.toLowerCase() }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cat-title">Card heading</Label>
+            <Input
+              id="cat-title"
+              placeholder="e.g. For Women's"
+              value={form.title ?? ""}
+              onChange={(event) => setForm((f) => ({ ...f, title: event.target.value }))}
+            />
           </div>
           <div className="space-y-2">
             <Label>Parent category</Label>
-            <Select value={parentId} onValueChange={setParentId}>
+            <Select
+              value={form.parentId ?? "none"}
+              onValueChange={(value) => setForm((f) => ({ ...f, parentId: value === "none" ? null : value }))}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">No parent (top level)</SelectItem>
-                {categories?.map((category) => (
+                {parentOptions.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
                   </SelectItem>
@@ -129,55 +197,58 @@ export default function CategoriesPage() {
               </SelectContent>
             </Select>
           </div>
-          {formError && <p className="text-sm text-destructive">{formError}</p>}
-          <Button onClick={handleCreate} disabled={!name || createCategory.isPending}>
-            Create category
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal open={!!editing} onOpenChange={(open) => !open && setEditing(null)} title="Edit category">
-        <div className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-name">Name</Label>
-            <Input id="edit-name" value={name} onChange={(event) => setName(event.target.value)} />
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="cat-description">Description</Label>
+            <Textarea
+              id="cat-description"
+              rows={2}
+              value={form.description ?? ""}
+              onChange={(event) => setForm((f) => ({ ...f, description: event.target.value }))}
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Image</Label>
+            <ImageField value={form.imageUrl} alt={form.imageAlt} onChange={(imageUrl) => setForm((f) => ({ ...f, imageUrl }))} />
           </div>
           <div className="space-y-2">
-            <Label>Parent category</Label>
-            <Select value={parentId} onValueChange={setParentId}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No parent (top level)</SelectItem>
-                {categories
-                  ?.filter((category) => category.id !== editing?.id)
-                  .map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="cat-alt">Image alt text</Label>
+            <Input id="cat-alt" value={form.imageAlt ?? ""} onChange={(event) => setForm((f) => ({ ...f, imageAlt: event.target.value }))} />
           </div>
-          {formError && <p className="text-sm text-destructive">{formError}</p>}
-          <Button onClick={handleUpdate} disabled={!name || updateCategory.isPending}>
-            Save changes
-          </Button>
+          <div className="space-y-2">
+            <Label htmlFor="cat-position">Display order</Label>
+            <Input
+              id="cat-position"
+              type="number"
+              min={0}
+              value={form.position ?? 0}
+              onChange={(event) => setForm((f) => ({ ...f, position: Math.max(0, event.target.valueAsNumber || 0) }))}
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:col-span-2">
+            <div>
+              <Label>Visible on storefront</Label>
+              <p className="text-xs text-muted-foreground">Hidden categories stay assigned to products but are not shown.</p>
+            </div>
+            <Switch checked={form.isActive ?? true} onCheckedChange={(isActive) => setForm((f) => ({ ...f, isActive }))} />
+          </div>
         </div>
+        <ApiErrorAlert error={saving.error} />
+        <Button onClick={handleSave} disabled={!form.name || saving.isPending}>
+          {editing ? "Save changes" : "Create category"}
+        </Button>
       </Modal>
 
       <ConfirmationDialog
         open={!!categoryToDelete}
         onOpenChange={(open) => !open && setCategoryToDelete(null)}
-        title="Delete category?"
-        description={`"${categoryToDelete?.name}" will be archived and removed from all products.`}
-        confirmLabel="Delete"
+        title="Archive category?"
+        description={`"${categoryToDelete?.name}" will be archived. Categories that still contain products or subcategories can't be archived — hide them instead.`}
+        confirmLabel="Archive"
         variant="destructive"
         isLoading={deleteCategory.isPending}
         onConfirm={() => {
           if (!categoryToDelete) return;
-          deleteCategory.mutate(categoryToDelete.id, { onSuccess: () => setCategoryToDelete(null) });
+          deleteCategory.mutate(categoryToDelete.id, { onSettled: () => setCategoryToDelete(null) });
         }}
       />
     </PageContainer>
